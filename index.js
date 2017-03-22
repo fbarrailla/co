@@ -6,6 +6,7 @@ const inquirer      = require('inquirer')
 const exec = command => new Promise((resolve, reject) =>
   child_process.exec(command, (err, stdout) => err ? reject(err) : resolve(stdout)))
 
+const parseBranches = stdout => stdout.split('\n').map(b => b.trim()).filter(Boolean)
 const cleanBranchName = name => name.replace(/^\*/, '')
 
 const ask = (title, items) => inquirer.prompt(
@@ -18,7 +19,7 @@ const ask = (title, items) => inquirer.prompt(
 ).then(choice => choice.value)
 
 const selectBranch = () => exec('git branch')
-  .then(stdout   => stdout.split('\n').map(b => b.trim()).filter(Boolean))
+  .then(parseBranches)
   .then(branches => branches.length ? ask('Select a branch', branches) : Promise.reject('No branches found...'))
   .then(branch   => selectAction(cleanBranchName(branch)))
 
@@ -34,18 +35,9 @@ const selectAction = branch => ask('What would you like to do ?', ['checkout', '
   })
 
 const deleteBranch = branch => ask('Are you sure ?', ['yes', 'no'])
-  .then(response => {
-    if (response === 'yes') {
-      return exec(`git branch -D ${branch}`)
-    }
-    return selectBranch()
-  })
+  .then(response => response === 'yes' ? exec(`git branch -D ${branch}`) : selectBranch())
 
 // 🏁 Let's Go 🏁
 selectBranch()
-  .catch(err => {
-    console.log(`❌  ${err}`)
-  })
-  .then(() => {
-    process.exit(0)
-  })
+  .catch(err => console.log(`❌  ${err}`))
+  .then(() => process.exit(0))
