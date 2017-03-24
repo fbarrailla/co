@@ -1,5 +1,5 @@
 {
-  "name": "co",
+  "name": "@fbarrailla/co",
   "version": "1.0.0",
   "description": "Simple git checkout cli",
   "main": "index.js",
